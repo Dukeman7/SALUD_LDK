@@ -1,79 +1,66 @@
 import streamlit as st
 import pandas as pd
-import plotly.express as px
 import plotly.graph_objects as go
 from datetime import datetime
+import os
 
-# Configuración de la página
-st.set_page_config(page_title="Búnker Health - Monitor de Glucosa", layout="wide")
+# 1. Configuración de Archivo de Datos
+DB_FILE = "glucosa_historico.csv"
 
-st.title("📊 Monitor de Control Metabólico - Luis")
-st.markdown("---")
+def cargar_datos():
+    if os.path.exists(DB_FILE):
+        df = pd.read_csv(DB_FILE)
+        df['Fecha'] = pd.to_datetime(df['Fecha'])
+        return df.sort_values('Fecha')
+    else:
+        # Si no existe, creamos uno con tu data inicial
+        return pd.DataFrame(columns=['Fecha', 'Lectura'])
 
-# 1. Base de Datos (Simulando lo que tienes en Excel)
-# Aquí puedes cargar tu archivo: df = pd.read_excel("tus_datos.xlsx")
-data = {
-    'Fecha': pd.to_datetime(['2026-02-21', '2026-02-22', '2026-02-23', '2026-02-24']),
-    'Lectura': [116, 120, 123, 122]
-}
-df = pd.DataFrame(data)
+# 2. Configuración de la App
+st.set_page_config(page_title="Búnker Health - Glucosa Pro", layout="wide")
+st.title("📊 Monitor Metabólico de Alta Precisión")
 
-# 2. Sidebar para agregar nueva lectura
-st.sidebar.header("📥 Nueva Entrada")
-nueva_fecha = st.sidebar.date_input("Fecha", datetime.now())
-nuevo_valor = st.sidebar.number_input("Valor Glucosa (mg/dL)", min_value=50, max_value=300, value=110)
+df = cargar_datos()
 
-if st.sidebar.button("Registrar Lectura"):
-    # Aquí iría la lógica para guardar en el Excel/CSV
-    st.sidebar.success(f"Registrado: {nuevo_valor} mg/dL")
+# 3. Sidebar: Registro
+st.sidebar.header("📥 Registro de Lectura")
+fecha_ingreso = st.sidebar.date_input("Fecha", datetime.now())
+valor_ingreso = st.sidebar.number_input("mg/dL", min_value=50, max_value=300, value=110)
 
-# 3. Definición de la Meta (Tendencia Planificada)
-# Digamos que tu meta es bajar de 122 a 100 en 15 días
-meta_inicio = 122
-meta_objetivo = 100
-dias_plan = 15
+if st.sidebar.button("💾 Guardar en Búnker"):
+    nueva_fila = pd.DataFrame({'Fecha': [pd.to_datetime(fecha_ingreso)], 'Lectura': [valor_ingreso]})
+    df = pd.concat([df, nueva_fila]).drop_duplicates().sort_values('Fecha')
+    df.to_csv(DB_FILE, index=False)
+    st.sidebar.success("¡Data Blindada!")
+    st.rerun()
 
-# 4. Creación del Gráfico
+# 4. Cálculos de Promedios Móviles (La magia de los 8, 15, 30, 45 días)
+# Usamos .rolling para suavizar la curva
+if not df.empty:
+    df['MA8'] = df['Lectura'].rolling(window=8, min_periods=1).mean()
+    df['MA15'] = df['Lectura'].rolling(window=15, min_periods=1).mean()
+    df['MA30'] = df['Lectura'].rolling(window=30, min_periods=1).mean()
+    df['MA45'] = df['Lectura'].rolling(window=45, min_periods=1).mean()
+
+# 5. Visualización Pro con Plotly
 fig = go.Figure()
 
-# Línea de Datos Reales
-fig.add_trace(go.Scatter(
-    x=df['Fecha'], y=df['Lectura'],
-    mode='lines+markers',
-    name='Glucosa Real',
-    line=dict(color='#00e5ff', width=3),
-    marker=dict(size=10)
-))
+# Lecturas Reales (Puntos)
+fig.add_trace(go.Scatter(x=df['Fecha'], y=df['Lectura'], mode='markers', name='Lectura Diaria', 
+                         marker=dict(color='#00e5ff', size=8, opacity=0.5)))
 
-# Línea de Tendencia Planificada (Meta)
-fig.add_trace(go.Scatter(
-    x=[df['Fecha'].max(), df['Fecha'].max() + pd.Timedelta(days=dias_plan)],
-    y=[meta_inicio, meta_objetivo],
-    mode='lines',
-    name='Ruta Objetivo (Meta)',
-    line=dict(color='#ff4081', dash='dash', width=2)
-))
+# Líneas de Promedio
+colores = {'MA8': '#ffeb3b', 'MA15': '#ff9800', 'MA30': '#f44336', 'MA45': '#9c27b0'}
+for ma in ['MA8', 'MA15', 'MA30', 'MA45']:
+    fig.add_trace(go.Scatter(x=df['Fecha'], y=df[ma], mode='lines', name=f'Promedio {ma[2:]} días',
+                             line=dict(color=colores[ma], width=2)))
 
-# Zonas de Alerta
-fig.add_hrect(y0=70, y1=100, fillcolor="green", opacity=0.1, line_width=0, annotation_text="Zona Óptima")
-fig.add_hrect(y0=100, y1=125, fillcolor="yellow", opacity=0.1, line_width=0, annotation_text="Pre-Alerta")
-fig.add_hrect(y0=125, y1=200, fillcolor="red", opacity=0.1, line_width=0, annotation_text="Crítico")
+# Meta Ideal (Línea Horizontal en 100)
+fig.add_hline(y=100, line_dash="dash", line_color="green", annotation_text="Meta < 100")
 
-fig.update_layout(
-    title="Análisis de Tendencia vs Meta",
-    xaxis_title="Fecha",
-    yaxis_title="mg/dL",
-    template="plotly_dark",
-    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
-)
-
+fig.update_layout(template="plotly_dark", height=600, title="Evolución y Promedios Móviles")
 st.plotly_chart(fig, use_container_width=True)
 
-# 5. Indicadores Rápidos
-col1, col2, col3 = st.columns(3)
-with col1:
-    st.metric("Última Lectura", f"{df['Lectura'].iloc[-1]}", "1.2%", delta_color="inverse")
-with col2:
-    st.metric("Promedio 7 días", "118", "-2.5%")
-with col3:
-    st.metric("Distancia a Meta", f"{df['Lectura'].iloc[-1] - meta_objetivo} pts")
+# 6. Tabla de Control
+st.subheader("📋 Histórico de Combate")
+st.dataframe(df.sort_values('Fecha', ascending=False), use_container_width=True)
