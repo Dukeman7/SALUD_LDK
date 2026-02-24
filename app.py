@@ -34,9 +34,9 @@ if st.sidebar.button("💾 Guardar en Búnker"):
     st.sidebar.success("¡Data Blindada!")
     st.rerun()
 
-# 4. Cálculos de Promedios Móviles (La magia de los 8, 15, 30, 45 días)
-# Usamos .rolling para suavizar la curva
+# 4. Cálculos de Promedios Móviles (Blindado)
 if not df.empty:
+    # Solo calculamos si hay suficientes datos para evitar columnas vacías
     df['MA8'] = df['Lectura'].rolling(window=8, min_periods=1).mean()
     df['MA15'] = df['Lectura'].rolling(window=15, min_periods=1).mean()
     df['MA30'] = df['Lectura'].rolling(window=30, min_periods=1).mean()
@@ -45,15 +45,17 @@ if not df.empty:
 # 5. Visualización Pro con Plotly
 fig = go.Figure()
 
-# Lecturas Reales (Puntos)
-fig.add_trace(go.Scatter(x=df['Fecha'], y=df['Lectura'], mode='markers', name='Lectura Diaria', 
-                         marker=dict(color='#00e5ff', size=8, opacity=0.5)))
+if not df.empty:
+    # Lecturas Reales
+    fig.add_trace(go.Scatter(x=df['Fecha'], y=df['Lectura'], mode='markers', name='Lectura Diaria', 
+                             marker=dict(color='#00e5ff', size=8, opacity=0.5)))
 
-# Líneas de Promedio
-colores = {'MA8': '#ffeb3b', 'MA15': '#ff9800', 'MA30': '#f44336', 'MA45': '#9c27b0'}
-for ma in ['MA8', 'MA15', 'MA30', 'MA45']:
-    fig.add_trace(go.Scatter(x=df['Fecha'], y=df[ma], mode='lines', name=f'Promedio {ma[2:]} días',
-                             line=dict(color=colores[ma], width=2)))
+    # Líneas de Promedio (Verificando si la columna existe antes de usarla)
+    colores = {'MA8': '#ffeb3b', 'MA15': '#ff9800', 'MA30': '#f44336', 'MA45': '#9c27b0'}
+    for ma in colores.keys():
+        if ma in df.columns:  # <--- ESTE ES EL BLINDAJE
+            fig.add_trace(go.Scatter(x=df['Fecha'], y=df[ma], mode='lines', name=f'Promedio {ma[2:]} días',
+                                     line=dict(color=colores[ma], width=2)))
 
 # Meta Ideal (Línea Horizontal en 100)
 fig.add_hline(y=100, line_dash="dash", line_color="green", annotation_text="Meta < 100")
