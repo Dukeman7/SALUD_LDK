@@ -29,7 +29,6 @@ data_glucosa = {
 df = pd.DataFrame(data_glucosa)
 
 # --- 3. LÓGICA DE PESO (INTERPOLACIÓN DE HITOS) ---
-# Hitos discretos (lo que tú controlas)
 hitos_peso = {
     '2026-01-01': 127.0,
     '2026-01-25': 123.5,
@@ -39,12 +38,10 @@ hitos_peso = {
 
 df_p = pd.DataFrame(list(hitos_peso.items()), columns=['Fecha', 'Peso'])
 df_p['Fecha'] = pd.to_datetime(df_p['Fecha'])
-# Rellenamos los días intermedios de forma continua
 df_p = df_p.set_index('Fecha').resample('D').interpolate(method='linear').reset_index()
 
-# Unimos la data
 df = pd.merge(df, df_p, on='Fecha', how='left')
-df['Peso'] = df['Peso'].ffill().bfill() # Limpieza de bordes
+df['Peso'] = df['Peso'].ffill().bfill()
 
 # --- 4. CÁLCULOS DE CONTROL (PROMEDIOS Y PROYECCIÓN) ---
 df['MA8'] = df['Glucosa'].rolling(window=8).mean()
@@ -52,11 +49,43 @@ df['MA15'] = df['Glucosa'].rolling(window=15).mean()
 df['MA30'] = df['Glucosa'].rolling(window=30).mean()
 df['MA45'] = df['Glucosa'].rolling(window=45).mean()
 
-# Parámetros Proyectados (Plan 91)
 asintota = 90
 k = 0.08
 v_hoy = 122
 dias_proy = 45
-t_fut = np.arange(dias_proy)  # <-- Asegúrate que esta línea esté completa
+t_fut = np.arange(dias_proy)
 v_fut = (v_hoy - asintota) * np.exp(-k * t_fut) + asintota
 fechas_fut = [df['Fecha'].max() + timedelta(days=int(i)) for i in t_fut]
+
+# --- 5. INTERFAZ Y VISUALIZACIÓN (¡ESTO ERA LO QUE FALTABA!) ---
+st.title("🛡️ Búnker Health: Proyecto 91 / Hito 90")
+st.markdown(f"**Estatus:** Renovación Solicitada (91 días de margen) | **Meta de Peso:** 115kg")
+
+# Fila de métricas (KPIs)
+c1, c2, c3, c4 = st.columns(4)
+c1.metric("Promedio 8d", f"{df['MA8'].iloc[-1]:.1f}")
+c2.metric("Promedio 15d", f"{df['MA15'].iloc[-1]:.1f}")
+c3.metric("Promedio 30d", f"{df['MA30'].iloc[-1]:.1f}")
+c4.metric("IMC Actual", f"{df['Peso'].iloc[-1]/(1.75**2):.1f}") 
+
+# Construcción del Gráfico
+fig = make_subplots(specs=[[{"secondary_y": True}]])
+df_vis = df.tail(45)
+
+# Glucosa
+fig.add_trace(go.Scatter(x=df_vis['Fecha'], y=df_vis['Glucosa'], name="Glucosa Real", 
+                         line=dict(color='#00e5ff', width=3)), secondary_y=False)
+
+# Peso
+fig.add_trace(go.Scatter(x=df_vis['Fecha'], y=df_vis['Peso'], name="Peso (kg)", 
+                         line=dict(color='#ffeb3b', width=2, dash='dot')), secondary_y=True)
+
+# Proyección Plan 91
+fig.add_trace(go.Scatter(x=fechas_fut, y=v_fut, name="Hito Fijo (Plan 91)", 
+                         line=dict(color='#ff4081', dash='dash')), secondary_y=False)
+
+fig.update_layout(template="plotly_dark", height=600, hovermode="x unified")
+st.plotly_chart(fig, use_container_width=True)
+
+# Mensaje Final
+st.success(f"🎯 Próximo Hito (Glucosa < 99): **{(df['Fecha'].max() + timedelta(days=22)).strftime('%d de Marzo')}**")
