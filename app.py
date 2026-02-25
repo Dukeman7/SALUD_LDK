@@ -57,3 +57,6 @@ asintota = 90
 k = 0.08
 v_hoy = 122
 dias_proy = 45
+t_fut = np.arange(dias_proy)  # <-- Asegúrate que esta línea esté completa
+v_fut = (v_hoy - asintota) * np.exp(-k * t_fut) + asintota
+fechas_fut = [df['Fecha'].max() + timedelta(days=int(i)) for i in t_fut]
