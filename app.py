@@ -7,7 +7,25 @@ from datetime import datetime, timedelta
 
 # --- 1. CONFIGURACIÓN DEL BÚNKER ---
 st.set_page_config(page_title="Búnker Health - LDK", layout="wide")
+# --- AGREGAR ESTO AL PRINCIPIO PARA EL SEGUIMIENTO ---
+import os
 
+def cargar_datos():
+    if os.path.exists("data_historica.csv"):
+        return pd.read_csv("data_historica.csv", parse_dates=['Fecha'])
+    else:
+        # Si no existe, crea el inicial con tu data maestra
+        return pd.DataFrame(data_glucosa)
+
+# En la barra lateral:
+with st.sidebar:
+    st.header("📝 Registro Diario")
+    nueva_fecha = st.date_input("Fecha", datetime.now())
+    nuevo_valor = st.number_input("Glucosa (mg/dL)", min_value=50, max_value=300, value=120)
+    if st.button("Guardar Registro"):
+        # Lógica para anexar al CSV
+        st.success("¡Registro guardado en el búnker!")
+        
 # --- 2. DATA MAESTRA (GLUCOSA REAL) ---
 data_glucosa = {
     'Fecha': pd.to_datetime([
