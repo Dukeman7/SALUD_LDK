@@ -31,7 +31,7 @@ df = pd.DataFrame(data_glucosa)
 # --- 3. LÓGICA DE PESO (INTERPOLACIÓN DE HITOS) ---
 hitos_peso = {
     '2026-01-01': 127.0,
-    '2026-01-25': 123.5,
+    '2026-01-25': 125.5,
     '2026-02-13': 125.3,
     '2026-02-24': 125.1
 }
@@ -66,7 +66,7 @@ c1, c2, c3, c4 = st.columns(4)
 c1.metric("Promedio 8d", f"{df['MA8'].iloc[-1]:.1f}")
 c2.metric("Promedio 15d", f"{df['MA15'].iloc[-1]:.1f}")
 c3.metric("Promedio 30d", f"{df['MA30'].iloc[-1]:.1f}")
-c4.metric("IMC Actual", f"{df['Peso'].iloc[-1]/(1.75**2):.1f}") 
+c4.metric("IMC Actual", f"{df['Peso'].iloc[-1]/(1.84**2):.1f}") 
 
 # Construcción del Gráfico
 fig = make_subplots(specs=[[{"secondary_y": True}]])
