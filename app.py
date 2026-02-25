@@ -57,4 +57,3 @@ asintota = 90
 k = 0.08
 v_hoy = 122
 dias_proy = 45
-t
