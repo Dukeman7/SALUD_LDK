@@ -23,7 +23,22 @@ peso_hitos = np.linspace(127, 123.5, 24).tolist() + np.linspace(123.5, 125.3, 18
 df = pd.DataFrame({
     'Fecha': fechas_glucosa, 
     'Glucosa': [110, 94, 107, 121, 97, 109, 109, 109, 105, 122, 110, 110, 107, 115, 109, 116, 126, 107, 125, 111, 133, 112, 116, 115, 96, 107, 109, 101, 116, 111, 107, 105, 107, 100, 103, 105, 103, 110, 118, 107, 113, 115, 119, 116, 116, 122, 118, 116, 120, 123, 122],
-    'Peso': peso_hitos[:51]
+    # Hitos reales que tú me diste
+hitos_peso = {
+    '2026-01-01': 127.0,
+    '2026-01-25': 123.5,
+    '2026-02-13': 125.3,
+    '2026-02-24': 125.1
+}
+
+# Creamos una serie de tiempo completa y le decimos que 'interpole' (una los puntos)
+df_peso = pd.DataFrame(list(hitos_peso.items()), columns=['Fecha', 'Peso'])
+df_peso['Fecha'] = pd.to_datetime(df_peso['Fecha'])
+df_peso = df_peso.set_index('Fecha').resample('D').interpolate(method='linear')
+
+# Ahora lo unimos a tu data de glucosa
+df = pd.merge(df_glucosa, df_peso, on='Fecha', how='left')
+df['Peso'] = df['Peso'].ffill().bfill() # Por si falta algún día al inicio/final
 })
 
 # --- 2. CÁLCULOS DE TENDENCIA Y PROMEDIOS ---
