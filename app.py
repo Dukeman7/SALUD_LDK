@@ -28,6 +28,11 @@ data_inicial = {
         110, 94, 107, 121, 97, 109, 109, 109, 105, 122, 110, 110, 107, 115, 109, 116, 126, 107, 125, 111, 133,
         112, 116, 115, 96, 107, 109, 101, 116, 111, 107, 105, 107, 100, 103, 105, 103, 110, 118, 107, 113, 115,
         119, 116, 116, 122, 118, 116, 120, 123, 122, 112
+    ],
+    'Peso_c': [
+        127.50,127.50,126.22,125.34,124.58,125.46,124.33,124.08,122.71,121.49,120.39,120.03,119.91,118.95,119.19,119.91,118.71,119.89,118.81,117.75,118.80
+        118.80,118.45,118.21,118.92,118.92,118.92,118.45,117.38,116.21,117.48,118.78,118.54,119.37,120.20,120.08,120.44,120.08,120.56,121.29,120.44,120.68
+        120.68,121.89,122.25,123.11,124.34,125.33,125.71,124.58,123.70,122.47
     ]
 }
 
@@ -48,10 +53,11 @@ with st.sidebar:
     with st.form("registro_form", clear_on_submit=True):
         fecha_input = st.date_input("Fecha de medición", datetime.now())
         glucosa_input = st.number_input("Glucosa (mg/dL)", min_value=50, max_value=300, value=112)
+        peso_input = st.number_input("Peso_c (kg)", min_value=50, max_value=300, value=126)
         submit = st.form_submit_button("Guardar en el Búnker")
         
         if submit:
-            nueva_fila = pd.DataFrame({'Fecha': [pd.to_datetime(fecha_input)], 'Glucosa': [glucosa_input]})
+            nueva_fila = pd.DataFrame({'Fecha': [pd.to_datetime(fecha_input)], 'Glucosa': [glucosa_input]}), 'Peso_c':[peso_input]})
             df = pd.concat([df, nueva_fila]).drop_duplicates(subset=['Fecha'], keep='last').sort_values('Fecha')
             df.to_csv(FILE_NAME, index=False)
             st.success("¡Dato guardado!")
@@ -89,6 +95,10 @@ df_vis = df.tail(45)
 # Glucosa Real (Cyan)
 fig.add_trace(go.Scatter(x=df_vis['Fecha'], y=df_vis['Glucosa'], name="Glucosa Real", 
                          line=dict(color='#00e5ff', width=4), mode='lines+markers'))
+
+# Peso Real (Yellow)
+fig.add_trace(go.Scatter(x=df_vis['Fecha'], y=df_vis['Peso_c'], name="Peso", 
+                         line=dict(color='#ffff00', dash='dash', width=3), mode='lines+markers'))
 
 # Hito Tatuado (Rosa)
 fig.add_trace(go.Scatter(x=fechas_fut, y=v_fut, name="Plan 91 (Hito Fijo)", 
