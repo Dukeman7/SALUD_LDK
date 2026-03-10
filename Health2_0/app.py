@@ -17,19 +17,25 @@ st.set_page_config(page_title="Búnker Health - LDK", layout="wide")
 # --- 2. EL RECEPTOR DE NUBE ---
 def load_data_from_google():
     try:
-        # Forzamos la descarga de la base de datos completa
-        response = requests.get(URL_LECTURA)
-        response.encoding = 'utf-8'
-        df = pd.read_csv(io.StringIO(response.text))
+        # Usamos el formato de exportación directa para saltar el error de 'Fecha'
+        export_url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=csv&sheet=CONTROL"
+        response = requests.get(export_url)
         
-        # Limpieza de seguridad
-        df.columns = [c.strip() for c in df.columns]
-        df['Fecha'] = pd.to_datetime(df['Fecha'], errors='coerce')
-        df['Glucosa'] = pd.to_numeric(df['Glucosa'], errors='coerce')
-        
-        # Eliminamos filas vacías y ordenamos por tiempo
-        df = df.dropna(subset=['Fecha', 'Glucosa']).sort_values('Fecha')
-        return df
+        if response.status_code == 200:
+            df = pd.read_csv(io.StringIO(response.content.decode('utf-8')))
+            
+            # Limpieza profunda de nombres de columnas
+            df.columns = df.columns.str.strip()
+            
+            # Forzamos la conversión
+            if 'Fecha' in df.columns:
+                df['Fecha'] = pd.to_datetime(df['Fecha'], errors='coerce')
+                df['Glucosa'] = pd.to_numeric(df['Glucosa'], errors='coerce')
+                df = df.dropna(subset=['Fecha', 'Glucosa']).sort_values('Fecha')
+                return df
+            else:
+                st.error(f"⚠️ Columnas detectadas: {list(df.columns)}")
+        return pd.DataFrame(columns=['Fecha', 'Glucosa'])
     except Exception as e:
         st.error(f"Falla de sintonía: {e}")
         return pd.DataFrame(columns=['Fecha', 'Glucosa'])
