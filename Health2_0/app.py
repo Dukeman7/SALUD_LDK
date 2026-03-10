@@ -44,21 +44,23 @@ with st.sidebar:
         glucosa_input = st.number_input("Glucosa (mg/dL)", min_value=50, max_value=300, value=110)
         submit = st.form_submit_button("📡 ENVIAR AL ESPACIO")
         
-        if submit:
-            payload = {
-                "tipo": "SALUD",
-                "fecha": fecha_input.strftime('%Y-%m-%d'),
-                "glucosa": glucosa_input
-            }
-            try:
-                res = requests.post(URL_ESCRITURA, json=payload, timeout=10)
-                if res.status_code == 200:
-                    st.success("✅ ¡Dato blindado en la nube!")
-                    st.rerun()
-                else:
-                    st.error("❌ Error en el repetidor de Google.")
-            except:
-                st.error("❌ Falla de transmisión (Timeout).")
+if submit:
+    payload = {
+        "tipo": "SALUD",
+        "fecha": fecha_input.strftime('%Y-%m-%d'),
+        "glucosa": glucosa_input
+    }
+    try:
+        # Enviamos con un timeout más largo por si Google está lento
+        res = requests.post(URL_ESCRITURA, json=payload, timeout=15)
+        if res.status_code == 200:
+            st.success("✅ ¡Dato blindado en la nube!")
+            st.balloons() # ¡Para celebrar el 111 de hoy!
+            st.rerun()
+        else:
+            st.error(f"❌ El repetidor respondió con código: {res.status_code}")
+    except Exception as e:
+        st.error(f"❌ Falla de transmisión física: {e}")
 
 # --- 4. CÁLCULOS Y PROYECCIONES ---
 if not df.empty:
