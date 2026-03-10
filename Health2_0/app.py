@@ -5,7 +5,6 @@ import plotly.graph_objects as go
 from datetime import datetime, timedelta
 import requests
 import io
-pip install kaleido
 
 # --- 1. COORDENADAS ---
 SHEET_ID = "1MT2EYKUmKmAP8vSBbPElR_DsP45zgrczDTMXe1b9s5Y" 
