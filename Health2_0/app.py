@@ -25,31 +25,22 @@ def load_data():
         # Retorno de emergencia si falla el enlace
         return pd.DataFrame(columns=['Fecha', 'Glucosa'])
 
-df = load_data()
-
-# --- 3. REGISTRO DIARIO (EL TRANSMISOR) ---
-with st.sidebar:
-    st.header("📝 Registro Diario")
-    with st.form("registro_form", clear_on_submit=True):
-        fecha_input = st.date_input("Fecha de medición", datetime.now())
-        glucosa_input = st.number_input("Glucosa (mg/dL)", min_value=50, max_value=300, value=110)
-        submit = st.form_submit_button("📡 ENVIAR AL ESPACIO")
-        
-        if submit:
-            payload = {
-                "tipo": "SALUD",
-                "fecha": fecha_input.strftime('%Y-%m-%d'),
-                "glucosa": glucosa_input
-            }
-            try:
-                res = requests.post(URL_ESCRITURA, json=payload)
-                if res.status_code == 200:
-                    st.success("✅ ¡Dato blindado en la nube!")
-                    st.rerun()
-                else:
-                    st.error("❌ Error en el repetidor.")
-            except:
-                st.error("❌ Falla de transmisión.")
+def load_data():
+    try:
+        # Añadimos encoding='utf-8' para que acepte acentos y Ñs
+        df_cloud = pd.read_csv(URL_LECTURA, encoding='utf-8')
+        df_cloud['Fecha'] = pd.to_datetime(df_cloud['Fecha'])
+        return df_cloud.sort_values('Fecha')
+    except Exception as e:
+        # Si el error persiste, probamos con este bypass:
+        try:
+             # A veces Google envía la data con un encoding diferente
+             df_cloud = pd.read_csv(URL_LECTURA, encoding='latin-1')
+             df_cloud['Fecha'] = pd.to_datetime(df_cloud['Fecha'])
+             return df_cloud.sort_values('Fecha')
+        except:
+             st.error(f"Falla de sintonía con la nube: {e}")
+             return pd.DataFrame(columns=['Fecha', 'Glucosa'])
 
 # --- 4. CÁLCULOS Y PROYECCIONES ---
 if not df.empty:
