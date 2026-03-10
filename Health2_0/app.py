@@ -103,5 +103,26 @@ if not df.empty:
         xaxis=dict(range=[fecha_inicio, fecha_fin]) # Aquí ocurre la magia
     )
     st.plotly_chart(fig, use_container_width=True)
+# --- SEGMENTO DE CAJA FUERTE: GUARDAR GRÁFICA ---
+st.divider()
+st.subheader("📁 Caja Fuerte del Búnker")
+
+# Convertimos la figura a una imagen estática (requiere que el usuario la descargue)
+try:
+    # Generamos el nombre del archivo con la fecha de hoy
+    nombre_archivo = f"Bunker_Health_LDK_{datetime.now().strftime('%Y-%m-%d')}.png"
+    
+    # Plotly permite descargar directamente desde el gráfico, 
+    # pero este botón es para el registro formal del búnker:
+    st.download_button(
+        label="📸 GUARDAR CAPTURA DEL RADAR (.PNG)",
+        data=fig.to_image(format="png", width=1200, height=600, scale=2),
+        file_name=nombre_archivo,
+        mime="image/png",
+        help="Guarda una imagen de alta resolución de la situación actual del Búnker."
+    )
+    st.caption("Nota: La primera vez puede tardar unos segundos en procesar la imagen.")
+except Exception as e:
+    st.info("💡 Para activar la descarga automática de imágenes, asegúrate de tener instalada la librería 'kaleido' (pip install kaleido).")
 else:
     st.info("📡 Escaneando la nube... asegúrate de que la hoja CONTROL tenga datos.")
