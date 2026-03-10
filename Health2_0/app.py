@@ -16,32 +16,32 @@ st.set_page_config(page_title="Búnker Health - LDK", layout="wide")
 # --- 2. MOTOR DE CARGA (DIRECTO DESDE LA NUBE) ---
 def load_data():
     try:
-        # Sintonizamos la frecuencia de Google Sheets
-        df_cloud = pd.read_csv(URL_LECTURA)
-        df_cloud['Fecha'] = pd.to_datetime(df_cloud['Fecha'])
-        return df_cloud.sort_values('Fecha')
-    except Exception as e:
-        st.error(f"Falla de sintonía con la nube: {e}")
-        # Retorno de emergencia si falla el enlace
-        return pd.DataFrame(columns=['Fecha', 'Glucosa'])
-
-def load_data():
-    try:
-        # Añadimos encoding='utf-8' para que acepte acentos y Ñs
+        # Intento 1: El estándar universal
         df_cloud = pd.read_csv(URL_LECTURA, encoding='utf-8')
-        df_cloud['Fecha'] = pd.to_datetime(df_cloud['Fecha'])
-        return df_cloud.sort_values('Fecha')
-    except Exception as e:
-        # Si el error persiste, probamos con este bypass:
+    except:
         try:
-             # A veces Google envía la data con un encoding diferente
-             df_cloud = pd.read_csv(URL_LECTURA, encoding='latin-1')
-             df_cloud['Fecha'] = pd.to_datetime(df_cloud['Fecha'])
-             return df_cloud.sort_values('Fecha')
+            # Intento 2: Si hay acentos rebeldes (Latin-1)
+            df_cloud = pd.read_csv(URL_LECTURA, encoding='latin-1')
         except:
-             st.error(f"Falla de sintonía con la nube: {e}")
-             return pd.DataFrame(columns=['Fecha', 'Glucosa'])
+            # Intento 3: Fuerza bruta (ignora errores de caracteres)
+            try:
+                import io
+                response = requests.get(URL_LECTURA)
+                response.encoding = 'utf-8'
+                df_cloud = pd.read_csv(io.StringIO(response.text))
+            except:
+                # Si todo falla, creamos un búnker vacío para no matar el código
+                return pd.DataFrame(columns=['Fecha', 'Glucosa'])
 
+    # Limpieza de columnas por si acaso hay espacios en blanco
+    df_cloud.columns = [c.strip() for c in df_cloud.columns]
+    
+    if 'Fecha' in df_cloud.columns:
+        df_cloud['Fecha'] = pd.to_datetime(df_cloud['Fecha'], errors='coerce')
+        df_cloud = df_cloud.dropna(subset=['Fecha']) # Quitamos filas basura
+        return df_cloud.sort_values('Fecha')
+    
+    return pd.DataFrame(columns=['Fecha', 'Glucosa'])
 # --- 4. CÁLCULOS Y PROYECCIONES ---
 if not df.empty:
     df['MA8'] = df['Glucosa'].rolling(window=8).mean()
