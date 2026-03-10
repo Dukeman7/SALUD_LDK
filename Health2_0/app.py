@@ -10,7 +10,7 @@ import io
 # PEGA AQUÍ TU ID DE GOOGLE SHEET
 SHEET_ID = "TU_ID_DE_HOJA_AQUÍ" 
 URL_LECTURA = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=CONTROL"
-URL_ESCRITURA = "https://script.google.com/macros/s/AKfycbzDBcvqqtowBetmsHEsXxsIxhicjP0DU2rsDs6LxlHt48aDo5VKuGOSLrty8IMzxd5I9Q/exec"
+URL_ESCRITURA = "https://script.google.com/macros/s/AKfycby1BwxvJAa-mmMxG87Eid-u-BF2e2L1r9TFQwK1h7Z5q0evmsK5ZmjJ2XH1Tl6jnJIkjQ/exec"
 
 st.set_page_config(page_title="Búnker Health - LDK", layout="wide")
 
