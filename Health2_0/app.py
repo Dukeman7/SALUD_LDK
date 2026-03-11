@@ -96,7 +96,16 @@ if not df.empty:
     fig.add_trace(go.Scatter(x=df['Fecha'], y=df['Glucosa'], name="Glucosa Real", line=dict(color='#00e5ff', width=3), mode='lines+markers'))
     
     # Peso: Meta vs Real
-    fig.add_trace(go.Scatter(x=fechas_p_meta, y=pesos_p_meta, name="Rumbo 99.8", line=dict(color='rgba(255, 255, 0, 0.2)', dash='dot')))
+    fig.add_trace(go.Scatter(
+        x=fechas_p_meta, 
+        y=pesos_p_meta, 
+        name="Rumbo 99.8", 
+        line=dict(
+            color='rgba(255, 255, 0, 0.3)', # Amarillo puro al 30% de brillo
+            dash='dash', # guiones
+            width=4 #Más gruesa
+        )
+    ))
     if not df_p.empty:
         fig.add_trace(go.Scatter(x=df_p['Fecha'], y=df_p['Peso'], name="Peso (kg)", 
                                  line=dict(color='yellow', width=4), mode='lines+markers',
