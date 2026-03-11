@@ -70,8 +70,29 @@ with st.sidebar:
 fechas_g = [pd.to_datetime('2026-02-24') + timedelta(days=i) for i in range(92)]
 v_fut_g = (122 - 90) * np.exp(-0.08 * np.arange(92)) + 90
 # Rumbo Peso (Meta 99.8)
-fechas_p_meta = [pd.to_datetime('2026-03-01'), pd.to_datetime('2026-06-28'), pd.to_datetime('2026-12-28')]
-pesos_p_meta = [123.5, 115.0, 99.8]
+# --- 1. CÁLCULO DE LA META DINÁMICA (Línea Dash) ---
+f_inicio_p = pd.to_datetime('2026-03-01')
+f_meta_p = pd.to_datetime('2026-06-28')
+peso_inicio = 123.5
+peso_meta = 115.0
+
+# Calculamos cuántos kg debemos bajar por día para llegar a junio
+dias_totales = (f_meta_p - f_inicio_p).days
+kg_por_bajar = peso_inicio - peso_meta
+ritmo_diario = kg_por_bajar / dias_totales
+
+# Calculamos cuál debería ser el peso HOY según la línea Dash
+dias_transcurridos = (datetime.now() - f_inicio_p).days
+peso_ideal_hoy = peso_inicio - (ritmo_diario * dias_transcurridos)
+
+# --- 2. ACTUALIZACIÓN DE LA MÉTRICA ---
+# Ahora comparamos tu peso real contra el 'peso_ideal_hoy'
+c2.metric(
+    label="Peso Actual", 
+    value=f"{ult_p:.1f} kg", 
+    delta=f"{ult_p - peso_ideal_hoy:.1f} vs ideal", 
+    delta_color="inverse"
+)
 
 # --- 4. INTERFAZ ---
 st.title("🛡️ Búnker Health: Operación 99.8 kg")
