@@ -84,7 +84,7 @@ if not df.empty:
     
     c1, c2, c3, c4 = st.columns(4)
     c1.metric("Glucosa", f"{ult_g:.0f}", delta=f"{ult_g-90:.0f} p/meta", delta_color="inverse")
-    c2.metric("Peso Actual", f"{ult_p:.1f} kg")
+    c2.metric("Peso Actual", f"{ult_p:.1f} kg", delta=f"{ult_p-115:.0f} p/meta", delta_color="inverse")
     c3.metric("Meta Junio", "115 kg")
     c4.metric("Meta Dic", "99.8 kg")
 
