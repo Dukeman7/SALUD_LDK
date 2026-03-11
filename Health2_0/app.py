@@ -51,4 +51,78 @@ with st.sidebar:
 
     st.divider()
     st.header("🔭 Ajuste de Radar (Zoom)")
-    f_inicio_zoom = st.date_
+    f_inicio_zoom = st.date_input("Desde:", value=hoy - timedelta(days=20))
+    f_fin_zoom = st.date_input("Hasta:", value=hoy + timedelta(days=20))
+
+# --- 3. LÓGICA DE PROSPECTIVA Y SEMÁFORO ---
+# Glucosa Suavizada
+f_base_g, meta_g, v_ini_g, suavizado = pd.to_datetime('2026-02-24'), 95, 122, 0.035
+t_fut_g = np.arange(120)
+v_fut_g = (v_ini_g - meta_g) * np.exp(-suavizado * t_fut_g) + meta_g
+fechas_g = [f_base_g + timedelta(days=int(i)) for i in t_fut_g]
+
+# Meta Diaria de Glucosa (Cálculo exacto para hoy)
+dias_g = (hoy - f_base_g).days
+meta_glucosa_hoy = (v_ini_g - meta_g) * np.exp(-suavizado * dias_g) + meta_g
+
+# Meta Peso Dinámica
+f_ini_p, f_meta_p, f_fin_p = pd.to_datetime('2026-03-01'), pd.to_datetime('2026-06-28'), pd.to_datetime('2026-12-28')
+p_ini, p_meta_j, p_meta_d = 123.5, 115.0, 99.8
+ritmo = (p_ini - p_meta_j) / (f_meta_p - f_ini_p).days
+peso_ideal_hoy = p_ini - (ritmo * (hoy - f_ini_p).days)
+
+# Promedios
+p7 = p15 = p30 = np.nan
+if not df.empty:
+    p7 = df[df['Fecha'] >= (hoy - timedelta(days=7))]['Glucosa'].mean()
+    p15 = df[df['Fecha'] >= (hoy - timedelta(days=15))]['Glucosa'].mean()
+    p30 = df[df['Fecha'] >= (hoy - timedelta(days=30))]['Glucosa'].mean()
+
+# --- 4. INTERFAZ V4.0 ---
+st.title("🛡️ Búnker Health V4.0: Operación 99.8 kg")
+
+if not df.empty:
+    ult_g = df['Glucosa'].iloc[-1]
+    df_p = df[df['Peso'] > 0]
+    ult_p = df_p['Peso'].iloc[-1] if not df_p.empty else 123.5
+    
+    # MÉTRICAS TOP
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Última Glucosa", f"{ult_g:.0f}", delta=f"{ult_g - meta_glucosa_hoy:+.1f} vs hoy", delta_color="inverse")
+    c2.metric("Peso Actual", f"{ult_p:.1f} kg", delta=f"{ult_p - peso_ideal_hoy:+.1f} vs ideal", delta_color="inverse")
+    c3.metric("Meta Junio", f"{p_meta_j} kg")
+    c4.metric("Meta Dic", f"{p_meta_d} kg")
+
+    # PROMEDIOS Y SEMÁFORO
+    st.write("### 📊 Tendencias y 🚦 Semáforo Táctico")
+    c5, c6, c7 = st.columns(3)
+    c5.metric("Promedio 7d", f"{p7:.1f}" if not np.isnan(p7) else "---")
+    c6.metric("Promedio 15d", f"{p15:.1f}" if not np.isnan(p15) else "---")
+    c7.metric("Promedio Mes", f"{p30:.1f}" if not np.isnan(p30) else "---")
+
+    ct1, ct2 = st.columns(2)
+    with ct1:
+        if not np.isnan(p7) and not np.isnan(p15):
+            var = (p7 - p15) / p15
+            if p7 < p15: st.success(f"🟢 Mejora Semanal: {var:.1%}")
+            elif abs(var) <= 0.05: st.warning(f"🟠 Estable (Variación < 5%)")
+            else: st.error(f"🔴 Alerta: Tendencia al alza")
+    with ct2:
+        if not np.isnan(p15) and not np.isnan(p30):
+            var2 = (p15 - p30) / p30
+            if p15 < p30: st.success(f"🟢 Quincena Positiva: {var2:.1%}")
+            elif abs(var2) <= 0.05: st.warning(f"🟠 Quincena Estable")
+            else: st.error(f"🔴 Tendencia mensual subiendo")
+
+    # --- 5. GRÁFICO ---
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=fechas_g, y=v_fut_g, name="Curva Meta Glucosa", line=dict(color='gray', dash='dash')))
+    fig.add_trace(go.Scatter(x=df['Fecha'], y=df['Glucosa'], name="Real", line=dict(color='#00e5ff', width=3), mode='lines+markers'))
+    fig.add_trace(go.Scatter(x=[f_ini_p, f_meta_p, f_fin_p], y=[p_ini, p_meta_j, p_meta_d], name="Rumbo Meta", line=dict(color='rgba(255, 255, 0, 0.4)', dash='dash', width=4)))
+    if not df_p.empty:
+        fig.add_trace(go.Scatter(x=df_p['Fecha'], y=df_p['Peso'], name="Peso Real", line=dict(color='yellow', width=4), mode='lines+markers', marker=dict(size=10, symbol='diamond')))
+
+    fig.update_layout(template="plotly_dark", height=600, margin=dict(l=20, r=20, t=20, b=20), xaxis=dict(range=[pd.to_datetime(f_inicio_zoom), pd.to_datetime(f_fin_zoom)]))
+    st.plotly_chart(fig, use_container_width=True)
+
+st.info(f"🎯 **ESTADO DEL BÚNKER:** Peso Ideal Hoy: {peso_ideal_hoy:.2f} kg | Meta Glucosa Hoy: {meta_glucosa_hoy:.1f} mg/dL")
