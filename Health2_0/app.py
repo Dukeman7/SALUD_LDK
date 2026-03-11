@@ -50,13 +50,23 @@ with st.sidebar:
 
     st.divider()
     st.header("🔭 Ajuste de Radar (Zoom)")
-    hoy_dt = datetime.now()
+    hoy = datetime.now()
+    prom_7d = df[df['Fecha'] >= (hoy - timedelta(days=7))]['Glucosa'].mean()
+    prom_15d = df[df['Fecha'] >= (hoy - timedelta(days=15))]['Glucosa'].mean()
+    prom_30d = df[df['Fecha'] >= (hoy - timedelta(days=30))]['Glucosa'].mean()
     f_inicio_zoom = st.date_input("Desde:", value=hoy_dt - timedelta(days=20))
     f_fin_zoom = st.date_input("Hasta:", value=hoy_dt + timedelta(days=20))
 
 # --- 3. LÓGICA DE PROSPECTIVA (EL CEREBRO) ---
-fechas_g = [pd.to_datetime('2026-02-24') + timedelta(days=i) for i in range(92)]
-v_fut_g = (122 - 90) * np.exp(-0.08 * np.arange(92)) + 90
+# --- RECALIBRACIÓN CUÁNTICA DE GLUCOSA ---
+f_base_g = pd.to_datetime('2026-02-24')
+meta_glucosa = 95  # Ajustado a tu nueva meta
+valor_inicial = 122
+suavizado = 0.035   # Menos exigente que 0.08
+
+t_fut_g = np.arange(120) # Ampliamos el horizonte de días
+v_fut_g = (valor_inicial - meta_glucosa) * np.exp(-suavizado * t_fut_g) + meta_glucosa
+fechas_g = [f_base_g + timedelta(days=int(i)) for i in t_fut_g]
 
 # Configuración de la meta dinámica
 f_inicio_p = pd.to_datetime('2026-03-01')
@@ -95,6 +105,11 @@ if not df.empty:
     c3.metric("Meta Junio", "115 kg")
     c4.metric("Meta Dic", "99.8 kg")
 
+    c5, c6, c7 = st.columns(3)
+    c5.metric("Promedio 7 días", f"{prom_7d:.1f}" if not np.isnan(prom_7d) else "---")
+    c6.metric("Promedio 15 días", f"{prom_15d:.1f}" if not np.isnan(prom_15d) else "---")
+    c7.metric("Promedio Mes", f"{prom_30d:.1f}" if not np.isnan(prom_30d) else "---")
+    
     # --- 5. GRÁFICO ---
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=fechas_g, y=v_fut_g, name="Meta Glucosa", line=dict(color='gray', dash='dash')))
@@ -115,4 +130,4 @@ if not df.empty:
                       xaxis=dict(range=[pd.to_datetime(f_inicio_zoom), pd.to_datetime(f_fin_zoom)]))
     st.plotly_chart(fig, use_container_width=True)
 
-st.info(f"💡 El peso ideal para hoy según la meta de junio es: {peso_ideal_hoy:.2 es f} kg")
+st.info(f"💡 El peso ideal para hoy según la meta de junio es: {peso_ideal_hoy:.2f} kg")
