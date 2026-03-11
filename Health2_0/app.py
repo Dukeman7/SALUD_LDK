@@ -33,7 +33,15 @@ df = load_data()
 
 # --- 2. BARRA LATERAL: REGISTRO Y AJUSTE DE VENTANA ---
 with st.sidebar:
-    st.header("📝 Registro de Biometría")
+    st.header("🔭 Ventana de Observación")
+    
+    # Fecha de hoy y fecha de hace 30 días
+    hoy = datetime.now()
+    hace_un_mes = hoy - timedelta(days=30)
+    
+    # Ponemos estos valores como el 'value' por defecto
+    f_inicio = st.date_input("Inicio", value=hace_un_mes)
+    f_fin = st.date_input("Fin", value=hoy)
     with st.form("reg_v35"):
         f_in = st.date_input("Fecha de hoy", datetime.now())
         g_in = st.number_input("Glucosa", value=111)
