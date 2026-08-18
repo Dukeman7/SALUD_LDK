@@ -1,0 +1,6 @@
+streamlit
+pandas
+numpy
+plotly
+requests
+kaleido==0.2.1
