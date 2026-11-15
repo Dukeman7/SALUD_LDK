@@ -67,8 +67,8 @@ f_base_g = pd.to_datetime("2026-01-01")
 f_fin_anio = pd.to_datetime("2026-12-31")
 dias_anio = (f_fin_anio - f_base_g).days + 1
 fechas_g = [f_base_g + timedelta(days=int(i)) for i in range(dias_anio)]
-v_ini_g = 115.0
-meta_final_g = 95.0
+v_ini_g = 125.0
+meta_final_g = 105.0
 suavizado = 0.012
 v_fut_g = [(v_ini_g - meta_final_g) * np.exp(-suavizado * i) + meta_final_g for i in range(dias_anio)]
 
