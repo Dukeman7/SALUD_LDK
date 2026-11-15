@@ -138,7 +138,7 @@ if not df.empty:
 
     # Curva Meta Glucosa (Gris Dash)
     fig.add_trace(go.Scatter(
-        x=fechas_g, y=v_fut_g, name="Curva Meta Glucosa",
+        x=fechas_g, y=v_fut_g+10, name="Curva Meta Glucosa",
         line=dict(color='gray', dash='dash', width=1.8)
     ))
 
