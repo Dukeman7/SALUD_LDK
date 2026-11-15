@@ -1,4 +1,4 @@
-import streamlit as st
+ import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
@@ -35,15 +35,16 @@ with st.sidebar:
     st.header("📝 Registro de Operaciones")
     with st.form("form_salud", clear_on_submit=True):
         f_in = st.date_input("Fecha de Registro", hoy)
-        g_in = st.number_input("Glucosa (mg/dL)", value=110)
+        g_in = st.text_input("Glucosa (mg/dL) - Vacío si no toca hoy", value="")
         p_in = st.text_input("Peso (kg) - Vacío si no toca hoy", value="")
         if st.form_submit_button("📡 TRANSMITIR AL BÚNKER"):
             try:
+                g_val = float(g_in.replace(',', '.')) if g_in.strip() != "" else ""
                 p_val = float(p_in.replace(',', '.')) if p_in.strip() != "" else 0
                 payload = {
                     "tipo": "SALUD",
                     "fecha": f_in.strftime('%Y-%m-%d'),
-                    "glucosa": g_in,
+                    "glucosa": g_val,
                     "peso": p_val
                 }
                 r = requests.post(URL_ESCRITURA, json=payload, timeout=15)
