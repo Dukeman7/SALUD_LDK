@@ -70,7 +70,7 @@ fechas_g = [f_base_g + timedelta(days=int(i)) for i in range(dias_anio)]
 v_ini_g = 115.0
 meta_final_g = 95.0
 suavizado = 0.012
-v_fut_g = [(v_ini_g - meta_final_g) * np.exp(-suavizado * i) + meta_final_g for i in range(dias_anio)]
+v_fut_g = 10+[(v_ini_g - meta_final_g) * np.exp(-suavizado * i) + meta_final_g for i in range(dias_anio)]
 
 dias_g_hoy = max(0, (pd.to_datetime(hoy.date()) - f_base_g).days)
 meta_glucosa_hoy = (v_ini_g - meta_final_g) * np.exp(-suavizado * dias_g_hoy) + meta_final_g
@@ -138,7 +138,7 @@ if not df.empty:
 
     # Curva Meta Glucosa (Gris Dash)
     fig.add_trace(go.Scatter(
-        x=fechas_g, y=v_fut_g+10, name="Curva Meta Glucosa",
+        x=fechas_g, y=v_fut_g, name="Curva Meta Glucosa",
         line=dict(color='gray', dash='dash', width=1.8)
     ))
 
